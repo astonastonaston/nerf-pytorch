@@ -1,7 +1,8 @@
 import os
 import torch
 import numpy as np
-import imageio 
+# import imageio
+import imageio.v3 as iio 
 import json
 import torch.nn.functional as F
 import cv2
@@ -55,7 +56,7 @@ def load_blender_data(basedir, half_res=False, testskip=1):
             
         for frame in meta['frames'][::skip]:
             fname = os.path.join(basedir, frame['file_path'] + '.png')
-            imgs.append(imageio.imread(fname))
+            imgs.append(iio.imread(fname))
             poses.append(np.array(frame['transform_matrix']))
         imgs = (np.array(imgs) / 255.).astype(np.float32) # keep all 4 channels (RGBA)
         poses = np.array(poses).astype(np.float32)
