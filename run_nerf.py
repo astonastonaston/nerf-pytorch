@@ -1,6 +1,5 @@
 import os, sys
 import numpy as np
-import imageio
 import json
 import random
 import time
@@ -12,6 +11,7 @@ from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
 from run_nerf_helpers import *
+import imageio
 
 from load_llff import load_llff_data
 from load_deepvoxels import load_dv_data
