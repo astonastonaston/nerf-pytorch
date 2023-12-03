@@ -1,7 +1,8 @@
 expname = blender_paper_bottle
 basedir = ./logs
-datadir = ./data/nerf_synthetic/bottle
+datadir = ./data/nerf_synthetic/bottles
 dataset_type = blender
+render_only = 0
 
 no_batching = True
 

@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm, trange
+import shutil
 
 import matplotlib.pyplot as plt
 
@@ -15,7 +16,7 @@ import imageio
 
 from load_llff import load_llff_data
 from load_deepvoxels import load_dv_data
-from load_blender import load_blender_data
+from load_blender import load_blender_data, load_blender_data_bottles
 from load_LINEMOD import load_LINEMOD_data
 
 
@@ -70,7 +71,8 @@ def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
                   near=0., far=1.,
                   use_viewdirs=False, c2w_staticcam=None,
                   **kwargs):
-    """Render rays
+    """
+    Render rays under a given camera pose.
     Args:
       H: int. Height of image in pixels.
       W: int. Width of image in pixels.
@@ -135,7 +137,9 @@ def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
 
 
 def render_path(render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
-
+    """
+    Render with all poses in render_poses
+    """
     H, W, focal = hwf
 
     if render_factor!=0:
@@ -424,7 +428,7 @@ def config_parser():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, 
                         help='config file path')
-    parser.add_argument("--expname", type=str, 
+    parser.add_argument("--expname", type=str,
                         help='experiment name')
     parser.add_argument("--basedir", type=str, default='./logs/', 
                         help='where to store ckpts and logs')
@@ -475,9 +479,9 @@ def config_parser():
     parser.add_argument("--raw_noise_std", type=float, default=0., 
                         help='std dev of noise added to regularize sigma_a output, 1e0 recommended')
 
-    parser.add_argument("--render_only", action='store_true', 
+    parser.add_argument("--render_only", action='store_true', default=0,  
                         help='do not optimize, reload weights and render out render_poses path')
-    parser.add_argument("--render_test", action='store_true', 
+    parser.add_argument("--render_test", action='store_true', default=0, 
                         help='render the test set instead of render_poses path')
     parser.add_argument("--render_factor", type=int, default=0, 
                         help='downsampling factor to speed up rendering, set 4 or 8 for fast preview')
@@ -567,9 +571,12 @@ def train():
         print('NEAR FAR', near, far)
 
     elif args.dataset_type == 'blender':
-        images, poses, render_poses, hwf, i_split = load_blender_data(args.datadir, args.half_res, args.testskip)
-        print('Loaded blender', images.shape, render_poses.shape, hwf, args.datadir)
+        print("Loading with {}".format(args.datadir))
+        images, poses, render_poses, hwf, i_split = load_blender_data_bottles(args.datadir, args.half_res, args.testskip)
+        # images, poses, render_poses, hwf, i_split = load_blender_data(args.datadir, args.half_res, args.testskip)
+        print('Loaded blender', images.shape, poses.shape, render_poses.shape, hwf, args.datadir)
         i_train, i_val, i_test = i_split
+        print(i_split)
 
         near = 2.
         far = 6.
@@ -791,12 +798,15 @@ def train():
         # Rest is logging
         if i%args.i_weights==0:
             path = os.path.join(basedir, expname, '{:06d}.tar'.format(i))
+            
             torch.save({
                 'global_step': global_step,
                 'network_fn_state_dict': render_kwargs_train['network_fn'].state_dict(),
                 'network_fine_state_dict': render_kwargs_train['network_fine'].state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
             }, path)
+            # shutil.copytree(basedir, "../{}_{}".format(os.path.basename(basedir), expname))
+            shutil.copytree(basedir, "/content/drive/MyDrive/HW3_res/{}_{}".format(os.path.basename(basedir), expname), dirs_exist_ok=True)
             print('Saved checkpoints at', path)
 
         if i%args.i_video==0 and i > 0:
@@ -820,7 +830,7 @@ def train():
             os.makedirs(testsavedir, exist_ok=True)
             print('test poses shape', poses[i_test].shape)
             with torch.no_grad():
-                render_path(torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, gt_imgs=images[i_test], savedir=testsavedir)
+                render_path(torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, savedir=testsavedir)
             print('Saved test set')
 
 
