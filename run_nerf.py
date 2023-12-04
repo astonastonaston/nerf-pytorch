@@ -432,6 +432,8 @@ def config_parser():
                         help='experiment name')
     parser.add_argument("--basedir", type=str, default='./logs/', 
                         help='where to store ckpts and logs')
+    parser.add_argument("--N_iters", type=int, default=200000, 
+                        help='the number of iterations to train')
     parser.add_argument("--datadir", type=str, default='./data/llff/fern', 
                         help='input data directory')
 
@@ -705,7 +707,8 @@ def train():
         rays_rgb = torch.Tensor(rays_rgb).to(device)
 
 
-    N_iters = 200000 + 1
+    N_iters = args.N_iters + 1
+    # N_iters = 200000 + 1
     print('Begin')
     print('TRAIN views are', i_train)
     print('TEST views are', i_test)
