@@ -62,7 +62,9 @@ def load_blender_data_bottles(basedir, half_res=False, testskip=1):
         for j in range(ssize):
             if not is_test:
                 imgfname = os.path.join(basedir, "rgb", "{}_{}_{:04d}.png".format(i, stype, j))
-                imgs.append(iio.imread(imgfname))
+                img = iio.imread(imgfname)
+                # print(img.shape)
+                imgs.append(img)
             posefname = os.path.join(basedir, "pose", "{}_{}_{:04d}.txt".format(i, stype, j))
             poses.append(np.array(np.loadtxt(posefname)))
 

@@ -580,8 +580,8 @@ def train():
         i_train, i_val, i_test = i_split
         print(i_split)
 
-        near = 2.
-        far = 6.
+        near = 0.
+        far = 5.
 
         if args.white_bkgd:
             images = images[...,:3]*images[...,-1:] + (1.-images[...,-1:])
