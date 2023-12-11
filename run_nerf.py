@@ -531,6 +531,10 @@ def config_parser():
                         help='frequency of weight ckpt saving')
     parser.add_argument("--i_testset", type=int, default=50000, 
                         help='frequency of testset saving')
+    parser.add_argument("--i_valset", type=int, default=50000, 
+                        help='frequency of valset saving')
+    parser.add_argument("--i_valsize", type=int, default=25, 
+                        help='number of images to validate during training')
     parser.add_argument("--i_video",   type=int, default=50000, 
                         help='frequency of render_poses video saving')
 
@@ -660,6 +664,7 @@ def train():
     render_poses = torch.Tensor(render_poses).to(device)
 
     # Short circuit if only rendering out from trained model
+    # For test rendering: render_only==1 && render_test==1
     if args.render_only:
         print('RENDER ONLY')
         with torch.no_grad():
@@ -836,6 +841,19 @@ def train():
                 render_path(torch.Tensor(poses[i_test]).to(device), hwf, K, args.chunk, render_kwargs_test, savedir=testsavedir)
             print('Saved test set')
 
+        if i%args.i_valset==0 and i > 0:
+            valsavedir = os.path.join(basedir, expname, 'valset_{:06d}'.format(i))
+            os.makedirs(valsavedir, exist_ok=True)
+            print('val poses shape', poses[i_val].shape)
+            with torch.no_grad():
+                i_val_step = i_val[::(len(i_val) // args.i_valsize)]
+                val_rgbs, _ = render_path(torch.Tensor(poses[i_val_step]).to(device), hwf, K, args.chunk, render_kwargs_test, savedir=valsavedir)
+                val_gts = images[i_val_step]
+                psnr = mse2psnr(img2mse(val_rgbs, val_gts))
+            with open(os.path.join(valsavedir, 'psnr.txt'), 'w') as f:
+                f.write(psnr)
+            print('Validation PSNR = {} with validation size {}'.format(psnr, args.i_valsize))
+            print('Saved val set')
 
     
         if i%args.i_print==0:
