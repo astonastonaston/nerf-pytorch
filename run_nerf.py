@@ -260,7 +260,12 @@ def create_nerf(args):
     render_kwargs_test['perturb'] = False
     render_kwargs_test['raw_noise_std'] = 0.
 
-    return render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer
+    
+    render_kwargs_val = {k : render_kwargs_train[k] for k in render_kwargs_train}
+    render_kwargs_val['perturb'] = False
+    render_kwargs_val['raw_noise_std'] = 0.
+
+    return render_kwargs_train, render_kwargs_test, render_kwargs_val, start, grad_vars, optimizer
 
 
 def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=False):
@@ -650,7 +655,7 @@ def train():
             file.write(open(args.config, 'r').read())
 
     # Create nerf model
-    render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(args)
+    render_kwargs_train, render_kwargs_test, render_kwargs_val, start, grad_vars, optimizer = create_nerf(args)
     global_step = start
 
     bds_dict = {
@@ -659,6 +664,7 @@ def train():
     }
     render_kwargs_train.update(bds_dict)
     render_kwargs_test.update(bds_dict)
+    render_kwargs_val.update(bds_dict)
 
     # Move testing data to GPU
     render_poses = torch.Tensor(render_poses).to(device)
@@ -847,7 +853,7 @@ def train():
             print('val poses shape', poses[i_val].shape)
             with torch.no_grad():
                 i_val_step = i_val[::(len(i_val) // args.i_valsize)]
-                val_rgbs, _ = render_path(torch.Tensor(poses[i_val_step]).to(device), hwf, K, args.chunk, render_kwargs_test, savedir=valsavedir)
+                val_rgbs, _ = render_path(torch.Tensor(poses[i_val_step]).to(device), hwf, K, args.chunk, render_kwargs_val, savedir=valsavedir)
                 val_gts = images[i_val_step]
                 psnr = mse2psnr(img2mse(val_rgbs, val_gts))
             with open(os.path.join(valsavedir, 'psnr.txt'), 'w') as f:
