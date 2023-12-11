@@ -1,4 +1,4 @@
-expname = blender_paper_bottle
+expname = blender_paper_bottle_flip
 basedir = ./logs
 datadir = ./data/nerf_synthetic/bottles
 dataset_type = blender

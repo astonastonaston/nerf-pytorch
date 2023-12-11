@@ -38,7 +38,7 @@ def pose_spherical(theta, phi, radius):
 def load_blender_data_bottles(basedir, half_res=False, testskip=1):
     # TODO: only train and val are ok to run
     splits = ['train', 'val', 'test']
-    split_sizes = [100, 100, 200]
+    split_sizes = [175, 25, 200]
 
     all_imgs = []
     all_poses = []
@@ -66,7 +66,9 @@ def load_blender_data_bottles(basedir, half_res=False, testskip=1):
                 # print(img.shape)
                 imgs.append(img)
             posefname = os.path.join(basedir, "pose", "{}_{}_{:04d}.txt".format(i, stype, j))
-            poses.append(np.array(np.loadtxt(posefname)))
+            pose = np.array(np.loadtxt(posefname))
+            pose[:, 1:3] *= -1
+            poses.append(pose)
 
         poses = np.array(poses).astype(np.float32)
         counts.append(counts[-1] + ssize) # pose index count
