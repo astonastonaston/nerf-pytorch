@@ -855,9 +855,13 @@ def train():
                 i_val_step = i_val[::(len(i_val) // args.i_valsize)]
                 val_rgbs, _ = render_path(torch.Tensor(poses[i_val_step]).to(device), hwf, K, args.chunk, render_kwargs_val, savedir=valsavedir)
                 val_gts = images[i_val_step]
-                psnr = mse2psnr(img2mse(val_rgbs, val_gts))
+                print(val_rgbs.shape, val_gts.shape)
+                mse = img2mse(torch.Tensor(val_rgbs),torch.Tensor(val_gts))
+                psnr = mse2psnr(mse)
+                print(mse.item(), psnr.item())
+            print(psnr, psnr.shape)
             with open(os.path.join(valsavedir, 'psnr.txt'), 'w') as f:
-                f.write(psnr)
+                f.write(str(psnr.item()))
             print('Validation PSNR = {} with validation size {}'.format(psnr, args.i_valsize))
             print('Saved val set')
 
